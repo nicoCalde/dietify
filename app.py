@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import pandas as pd
 
 # Parchear collections para compatibilidad de experta
 import collections
@@ -34,6 +35,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Diccionario de imágenes profesionales (Unsplash) según el tipo de comida
+MEAL_IMAGES = {
+    "breakfast": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&auto=format&fit=crop&q=80",
+    "lunch": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
+    "dinner": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+    "snack": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&auto=format&fit=crop&q=80",
+    "default": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=600&auto=format&fit=crop&q=80"
+}
 
 # Estilo CSS personalizado para mejorar el diseño
 st.markdown("""
@@ -69,38 +79,10 @@ st.markdown("""
         margin-bottom: 20px;
         border-left: 5px solid #ff9800;
     }
-    .meal-badge-breakfast {
-        background-color: #ffe0b2;
-        color: #e65100;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 0.85em;
-    }
-    .meal-badge-lunch {
-        background-color: #c8e6c9;
-        color: #1b5e20;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 0.85em;
-    }
-    .meal-badge-dinner {
-        background-color: #bbdefb;
-        color: #0d47a1;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 0.85em;
-    }
-    .meal-badge-snack {
-        background-color: #f8bbd0;
-        color: #c2185b;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 0.85em;
-    }
+    .meal-badge-breakfast { background-color: #ffe0b2; color: #e65100; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; }
+    .meal-badge-lunch { background-color: #c8e6c9; color: #1b5e20; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; }
+    .meal-badge-dinner { background-color: #bbdefb; color: #0d47a1; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; }
+    .meal-badge-snack { background-color: #f8bbd0; color: #c2185b; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -242,31 +224,36 @@ with tab_recomendar:
                             badge_style = meal
                             meal_es = {"breakfast": "DESAYUNO", "lunch": "ALMUERZO", "dinner": "CENA", "snack": "MERIENDA"}.get(meal)
                             
-                            # Configuración de estilos según el estado para Modo Oscuro
                             border_color = "#4CAF50" if status == "exact" else "#ff9800"
                             status_html = '<span style="color:#4CAF50; font-weight:bold;">✓ EXACTO</span>' if status == "exact" else f'<span style="color:#ff9800; font-weight:bold;">✗ CASI COMPLETO</span>'
                             
-                            st.markdown(f"""
-                                <div style="background-color: #1e222b; color: #f0f2f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid {border_color}; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                        <span class="meal-badge-{badge_style}">{meal_es}</span>
-                                        <span style="color: #a3a8b4; font-size: 0.9em;">Estado: {status_html}</span>
-                                    </div>
-                                    <h3 style="margin-top:5px; margin-bottom:10px; color: #ffffff !important; font-weight: bold;">{recipe['name']}</h3>
-                                    <p style="color: #e0e4ed; margin-bottom: 6px;"><strong>Dietas:</strong> <span style="color: #4CAF50;">{", ".join(recipe['diet_tags'])}</span></p>
-                                    <p style="color: #a3a8b4; font-style: italic; margin-bottom: 12px; font-size: 0.95em; background-color: #252a36; padding: 8px 12px; border-radius: 6px;">
-                                        💡 <strong>Criterio de IA:</strong> {reason_ia}
-                                    </p>
-                                    <p style="color: #cbd0dc; line-height: 1.5;"><strong>Instrucciones:</strong> {recipe['instructions']}</p>
-                                </div>
-                                """, unsafe_allow_html=True)
+                            # --- SECCIÓN VISUAL MEJORADA CON IMÁGENES ---
+                            img_col, txt_col = st.columns([1, 2])
+                            with img_col:
+                                st.image(MEAL_IMAGES.get(recipe['meal_type'], MEAL_IMAGES["default"]), use_container_width=True)
                             
-                            # Mostrar ingredientes
-                            with st.expander(f"Ver ingredientes para {recipe['name']}"):
-                                for ing in recipe["ingredients"]:
-                                    st.write(f"- **{ing['ingredient_name'].capitalize()}**: {ing['quantity']} {ing['unit']}")
-                                if status == "near" and missing:
-                                    st.markdown(f"⚠️ **Falta comprar:** <span style='color:#ff9800; font-weight:bold;'>{', '.join(missing)}</span>", unsafe_allow_html=True)
+                            with txt_col:
+                                st.markdown(f"""
+                                    <div style="background-color: #1e222b; color: #f0f2f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid {border_color}; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                            <span class="meal-badge-{badge_style}">{meal_es}</span>
+                                            <span style="color: #a3a8b4; font-size: 0.9em;">Estado: {status_html}</span>
+                                        </div>
+                                        <h3 style="margin-top:5px; margin-bottom:10px; color: #ffffff !important; font-weight: bold;">{recipe['name']}</h3>
+                                        <p style="color: #e0e4ed; margin-bottom: 6px;"><strong>Dietas:</strong> <span style="color: #4CAF50;">{", ".join(recipe['diet_tags'])}</span></p>
+                                        <p style="color: #a3a8b4; font-style: italic; margin-bottom: 12px; font-size: 0.95em; background-color: #252a36; padding: 8px 12px; border-radius: 6px;">
+                                            💡 <strong>Criterio de IA:</strong> {reason_ia}
+                                        </p>
+                                        <p style="color: #cbd0dc; line-height: 1.5;"><strong>Instrucciones:</strong> {recipe['instructions']}</p>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                
+                                # Mostrar ingredientes
+                                with st.expander(f"Ver ingredientes para {recipe['name']}"):
+                                    for ing in recipe["ingredients"]:
+                                        st.write(f"- **{ing['ingredient_name'].capitalize()}**: {ing['quantity']} {ing['unit']}")
+                                    if status == "near" and missing:
+                                        st.markdown(f"⚠️ **Falta comprar:** <span style='color:#ff9800; font-weight:bold;'>{', '.join(missing)}</span>", unsafe_allow_html=True)
                             st.markdown("<hr style='border-color: #2e3440;'>", unsafe_allow_html=True)
                 else:
                     # Semanal
@@ -286,11 +273,12 @@ with tab_recomendar:
                                     meal_es = {"breakfast": "Desayuno", "lunch": "Almuerzo", "dinner": "Cena", "snack": "Merienda"}.get(meal)
                                     status_icon = "🟢" if status == "exact" else "🟡"
                                     
+                                    # --- IMAGEN PARA EL MENÚ SEMANAL ---
+                                    st.image(MEAL_IMAGES.get(recipe['meal_type'], MEAL_IMAGES["default"]), use_container_width=True)
+                                    
                                     st.markdown(f"**{meal_es}**")
                                     st.markdown(f"**{recipe['name']}**")
                                     st.caption(f"{status_icon} {'Exacto' if status == 'exact' else 'Casi completo'}")
-                                    
-                                    # RENDERIZADO DE REASON EN LA VISTA SEMANAL
                                     st.caption(f"💡 *{reason_ia}*")
                                     
                                     if status == "near" and missing:
@@ -340,12 +328,20 @@ with tab_inventario:
             st.rerun()
 
     with col_inv2:
-        st.subheader("Ingredientes Guardados")
         inventory = db_get_inventory()
         
         if not inventory:
             st.info("Tu despensa está vacía. ¡Ingresa ingredientes para comenzar!")
         else:
+            # --- AGREGADO: SECCIÓN DE GRÁFICO ESTADÍSTICO ---
+            st.subheader("📊 Gráfico de Stock Actual")
+            df_inv = pd.DataFrame(inventory)
+            if not df_inv.empty:
+                df_inv['alimento_unidad'] = df_inv['name'].str.capitalize() + " (" + df_inv['unit'] + ")"
+                st.bar_chart(df_inv.set_index('alimento_unidad')['quantity'], use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("📋 Ingredientes Guardados")
             for item in inventory:
                 c1, c2, c3 = st.columns([3, 1, 1])
                 c1.write(f"🍏 **{item['name'].capitalize()}**")
@@ -371,15 +367,21 @@ with tab_catalogo:
             st.info("No hay recetas en el catálogo.")
         else:
             for r in recipes:
-                st.markdown(f"### {r['name']} ({r['meal_type'].capitalize()})")
-                st.write(f"**Dietas compatibles:** {', '.join(r['diet_tags'])}")
+                # --- IMÁGENES AL CATÁLOGO ---
+                col_img_cat, col_info_cat = st.columns([1, 3])
+                with col_img_cat:
+                    st.image(MEAL_IMAGES.get(r['meal_type'], MEAL_IMAGES["default"]), use_container_width=True)
                 
-                # Ingredientes requeridos
-                ing_list = []
-                for ing in r["ingredients"]:
-                    ing_list.append(f"{ing['ingredient_name'].capitalize()} ({ing['quantity']} {ing['unit']})")
-                st.write(f"**Ingredientes:** {', '.join(ing_list)}")
-                st.write(f"**Instrucciones:** {r['instructions']}")
+                with col_info_cat:
+                    st.markdown(f"### {r['name']} ({r['meal_type'].capitalize()})")
+                    st.write(f"**Dietas compatibles:** {', '.join(r['diet_tags'])}")
+                    
+                    # Ingredientes requeridos
+                    ing_list = []
+                    for ing in r["ingredients"]:
+                        ing_list.append(f"{ing['ingredient_name'].capitalize()} ({ing['quantity']} {ing['unit']})")
+                    st.write(f"**Ingredientes:** {', '.join(ing_list)}")
+                    st.write(f"**Instrucciones:** {r['instructions']}")
                 st.markdown("---")
                 
     with col_cat2:
