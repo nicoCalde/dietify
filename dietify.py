@@ -183,24 +183,28 @@ def print_meal_recommendation(meal_name: str, rec_data: Optional[Dict[str, Any]]
 def cli_gestionar_inventario():
     while True:
         print_banner("GESTIONAR ALACENA / HELADERA (INVENTARIO)")
-        inventory = db_get_inventory()
-        if not inventory:
-            print("Tu alacena y heladera están vacías.")
-        else:
-            print("Alimentos disponibles actualmente:")
-            print(f"{'Ingrediente':<25} | {'Cantidad':<10} | {'Unidad':<10}")
-            print("-" * 51)
-            for item in inventory:
-                print(f"{item['name'].capitalize():<25} | {item['quantity']:<10.2f} | {item['unit']:<10}")
-                
-        print("\nOpciones de inventario:")
-        print("1) Agregar / Modificar ingrediente")
-        print("2) Eliminar ingrediente")
-        print("3) Vaciar inventario por completo")
-        print("4) Volver al menú principal")
         
-        opt = input("Opción (1-4): ").strip()
+        print("Opciones de inventario:")
+        print("1) Ver alimentos en el inventario")
+        print("2) Agregar / Modificar ingrediente")
+        print("3) Eliminar ingrediente")
+        print("4) Vaciar inventario por completo")
+        print("5) Volver al menú principal")
+        
+        opt = input("Opción (1-5): ").strip()
         if opt == "1":
+            print_banner("ALIMENTOS EN INVENTARIO")
+            inventory = db_get_inventory()
+            if not inventory:
+                print("Tu alacena y heladera están vacías.")
+            else:
+                print("Alimentos disponibles actualmente:")
+                print(f"{'Ingrediente':<25} | {'Cantidad':<10} | {'Unidad':<10}")
+                print("-" * 51)
+                for item in inventory:
+                    print(f"{item['name'].capitalize():<25} | {item['quantity']:<10.2f} | {item['unit']:<10}")
+            input("\nPresiona Enter para continuar...")
+        elif opt == "2":
             name = input("Nombre del ingrediente (ej. huevo): ").strip().lower()
             if not name:
                 continue
@@ -212,13 +216,13 @@ def cli_gestionar_inventario():
             unit = input("Unidad de medida (ej. unidades, g, ml): ").strip()
             db_update_inventory(name, qty, unit)
             print(f"-> Guardado exitosamente: {name.capitalize()} ({qty} {unit})")
-        elif opt == "2":
+        elif opt == "3":
             name = input("Nombre del ingrediente a eliminar: ").strip().lower()
             if db_delete_inventory_item(name):
                 print(f"-> Ingrediente '{name}' eliminado de tu inventario.")
             else:
                 print(f"(!) El ingrediente '{name}' no existe en el inventario.")
-        elif opt == "3":
+        elif opt == "4":
             confirm = input("¿Estás seguro de que deseas vaciar tu alacena? (s/n): ").strip().lower()
             if confirm == "s":
                 db_clear_inventory()
