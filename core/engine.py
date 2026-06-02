@@ -86,28 +86,28 @@ class DietRecommenderEngine(KnowledgeEngine):
         RecipeFact(id=MATCH.id, name=MATCH.name, meal_type=MATCH.mtype, ingredients=MATCH.reqs, tags=MATCH.tags)
     )
     def match_medical_recipe(self, id, name, mtype, reqs, tags, avail, constraints):
-        is_compatible = "medical" in tags or any(c in tags for c in constraints)
-        excluded = False
+        triggers = []
         
         # Diabetes: no azúcar ni miel
         if any(c in constraints for c in ["diabetic", "diabetic-friendly", "diabetes", "low-sugar"]):
             if any(term in reqs for term in ["miel", "azúcar", "azucar"]):
-                excluded, trigger = True, "miel o azúcar"
+                triggers.append("miel o azúcar")
                 
         # Hipertensión: debe ser bajo en sodio
         if any(c in constraints for c in ["hypertensive", "low-sodium", "hipertension"]):
             if "low-sodium" not in tags and "easy-digest" not in tags:
-                excluded, trigger = True, "exceso de sodio (no adaptado)"
+                triggers.append("exceso de sodio (no adaptado)")
                 
         # Bajo en grasas (low-fat)
         if "low-fat" in constraints or "bajo en grasa" in constraints:
             if any(term in reqs for term in ["mantequilla", "aceite", "aceite de oliva"]):
                 if "low-fat" not in tags:
-                    excluded, trigger = True, "exceso de grasas"
+                    triggers.append("exceso de grasas")
 
         # Si hay exclusión médica, se declara inmediatamente sin importar las etiquetas
-        if excluded:
-            self.declare(ExcludedRecipe(id=id, name=name, reason=f"Exclusión médica: Contiene o procesa '{trigger}', prohibido para tu condición."))
+        if triggers:
+            trigger_str = ", ".join(triggers)
+            self.declare(ExcludedRecipe(id=id, name=name, reason=f"Exclusión médica: Contiene o procesa '{trigger_str}', prohibido para tu condición."))
             return  # Cortamos la ejecución de esta regla para esta receta
         
         # Si pasó los filtros médicos, vemos si es compatible con el perfil de la receta

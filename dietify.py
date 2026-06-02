@@ -3,6 +3,7 @@
 
 import os
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import sqlite3
 from typing import List, Dict, Any, Optional
 
@@ -127,12 +128,15 @@ def cli_recomendar_menu():
         print("\n[!] ERROR: No hay recetas en la base de datos para recomendar. Agrega algunas recetas primero.")
         return
         
-    eligible = run_expert_system(
+    results = run_expert_system(
         diet_type=diet_type,
         constraints=constraints,
         available_ingredients=avail_names,
         all_recipes=all_recipes
     )
+    
+    eligible = results["eligible"]
+    excluded = results["excluded"]
     
     plan = plan_menus(eligible, target, all_recipes)
     
@@ -152,6 +156,13 @@ def cli_recomendar_menu():
                 rec_data = day_plan["menu"].get(meal)
                 print_meal_recommendation(meal, rec_data, compact=True)
                 
+    # Mostrar reporte del sistema experto (Recetas Excluidas)
+    if excluded:
+        print("\n" + "="*15 + " REPORTE DEL SISTEMA EXPERTO (RECETAS EXCLUIDAS) " + "="*15)
+        for exc in excluded:
+            print(f" ❌ {exc['name']}: {exc['reason']}")
+        print("="*79)
+                
     input("\nPresiona Enter para volver al menú principal...")
 
 def print_meal_recommendation(meal_name: str, rec_data: Optional[Dict[str, Any]], compact: bool = False):
@@ -164,15 +175,20 @@ def print_meal_recommendation(meal_name: str, rec_data: Optional[Dict[str, Any]]
     recipe = rec_data["recipe"]
     status = rec_data["status"]
     missing = rec_data["missing_ingredients"]
+    reason = rec_data.get("reason", "")
     
     status_str = "✓ EXACTO" if status == "exact" else f"✗ CASI COMPLETO (Falta comprar: {', '.join(missing)})"
     
     if compact:
         print(f" * {meal_es}: {recipe['name']} [{status_str}]")
+        if reason:
+            print(f"   └─ Criterio de IA: {reason}")
     else:
         print(f"=== {meal_es} ===")
         print(f"Receta: {recipe['name']}")
         print(f"Estado de cocina: {status_str}")
+        if reason:
+            print(f"Criterio de IA: {reason}")
         print("Ingredientes requeridos:")
         for ing in recipe["ingredients"]:
             print(f"  - {ing['ingredient_name'].capitalize()}: {ing['quantity']} {ing['unit']}")

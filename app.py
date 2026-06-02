@@ -130,7 +130,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("🍽️ Comidas a incluir")
 include_breakfast = st.sidebar.checkbox("Desayuno", value=True)
 include_lunch = st.sidebar.checkbox("Almuerzo", value=True)
-include_snack = st.sidebar.checkbox("Merienda (Snack)", value=False)
+include_snack = st.sidebar.checkbox("Merienda (Snack)", value=True)
 include_dinner = st.sidebar.checkbox("Cena", value=True)
 
 selected_meals = []

@@ -1,8 +1,0 @@
-# Dependencias adaptadas para Ubuntu (Compatible con entornos virtuales)
-# ---------------------------------------------------------------------
-# Este archivo contiene únicamente las librerías necesarias del proyecto que se
-# pueden instalar sin problemas mediante pip en un entorno virtual (venv) en Ubuntu,
-# evitando errores con paquetes del sistema (como python-apt, systemd-python, ufw, etc.).
-
-experta>=1.9.4
-streamlit>=1.20.0
